@@ -1,7 +1,7 @@
 LanUDPComm
 ==========
 
-Wifi LAN Communication between android devices using UDP.
+LAN Communication between android devices using UDP.
 
 USAGE
 =====
