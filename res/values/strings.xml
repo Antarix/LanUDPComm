@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<string name="client_online">has signed in.</string>
+	<string name="client_offline">has left.</string>
+	<string name="client_invited">invited you.</string>
+	<string name="client_changename">changed name to %1$s.</string>
+	<string name="client_invite">Do you want to accept %s\'s invition ?</string>
+	<string name="client_decline">%1$s has declined your invitation.</string>
+	<string name="client_cancelinvite">%1$s has canceled the invitation.</string>
+	<string name="client_busy">%1$s is already connected to a client.</string>
+	<string name="client_endconnection">%1$s has ended the connection.</string>
+	<string name="client_notresponding">%1$s is not responding anymore.</string>
+	<string name="client_waitforresponse">Waiting&#8230;</string>
+	<string name="error_lan_nocomm">An error occurred. It is not possible to receive LAN communication.</string>
+
+</resources>
