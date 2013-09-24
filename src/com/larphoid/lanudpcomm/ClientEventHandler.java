@@ -7,13 +7,13 @@ import java.nio.ByteBuffer;
  * © 2013 Larphoid Apps.
  * 
  * @since 05-09-2013
- * @author Larphoid Apps<br>
+ * @author Ralph Lussenburg<br>
  * <br>
  *         <b>This interface is used to report received data and client disconnecting, back to your application.</b>
  */
 public interface ClientEventHandler {
 	/**
-	 * Callback that receives data that was send either with {@link LanUDPComm#sendClientPacket()} or {@link LanUDPComm#sendClientPacket(String)} for a connection that was previously established with {@link LanUDPComm#inviteClientForConnection(int, String[])}.<br>
+	 * Callback that receives data that was send either with {@link LanUDPComm#sendClientPacket()} or {@link LanUDPComm#sendClientPacket(String)} for a connection that was previously established with {@link LanUDPComm#inviteClientForConnection(int, String, String[])}.<br>
 	 * <br>
 	 * There are two methods to use for communication. One for 'fast' binary data, and one for simple {@linkplain String} data. It is 'fast' because if there are a lot of events and you need to send data other than String data, it can be very slow if you first have to convert it into a String.<br>
 	 * 

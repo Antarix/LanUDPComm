@@ -12,6 +12,13 @@ import java.util.Map;
 
 import android.os.AsyncTask;
 
+/**
+ * © 2013 Larphoid Apps.
+ * 
+ * @author Ralph Lussenburg
+ * @since 05-09-2013
+ */
+
 public class Clients extends AsyncTask<String, Integer, String> {
 	private ClientsEventHandler eventHandler;
 	private List<InetAddress> ip = new ArrayList<InetAddress>();

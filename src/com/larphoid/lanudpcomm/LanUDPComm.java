@@ -34,7 +34,7 @@ import android.widget.SimpleAdapter;
  * © 2013 Larphoid Apps.
  * 
  * @since 05-09-2013
- * @author Larphoid Apps<br>
+ * @author Ralph Lussenburg<br>
  * <br>
  *         <h1>- NOTICE -</h1> The first byte value in the byte[] parameter of {@link DatagramPacket#getData()} or {@link #onClientsEvent(byte[], DatagramPacket)} when sending {@link #sendClientPacket()} / {@link #sendClientPacket(String)} is reserved for internal use by LanUDPComm.<br>
  *         These byte values are: 0, 1, 2, 3, 4, 5, 6, 7 and 8, which mean NO, YES, STRING_SPLIT_SEPARATOR, HI, BYE, CLIENT_INVITE, BUSY, KEEP_ALIVE, and CLIENT_EVENT respectively.<br>
@@ -84,7 +84,7 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 	private final Activity activity;
 	private final DialogInterface.OnDismissListener dialogDismissListener;
 	private int comm_port = 12345;
-	private int maxClientEventPacketSize;
+	private final int maxClientEventPacketSize;
 	private ByteBuffer clientEventBuffer;
 	private ClientInviteHandler clientInviteHandler;
 	private ClientEventHandler clientEventHandler;
@@ -154,7 +154,6 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 		for (int i = 0; i < clienteventBuffers.length; i++) {
 			clienteventBuffers[i] = new byte[maxClientEventPacketSize];
 		}
-		// clientEventBuffer = ByteBuffer.allocate(pMaxClientPacketSize > 0 ? pMaxClientPacketSize + 1 : MAX_PACKETSIZE);
 		clientInviteHandler = pClientInterface;
 		clientEventHandler = pClientEventHandler;
 		displayName = pMyDisplayName;
@@ -180,10 +179,10 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 		waitForInviteResponse.setCancelable(true);
 		waitForInviteResponse.setCanceledOnTouchOutside(false);
 		waitForInviteResponse.setOnCancelListener(discoveryListener);
-		discoveryListener.execute((Void[]) null);
+		discoveryListener.execute();
 		if (!needAliveConnection) {
 			clientEventListener = new ClientEventListener();
-			clientEventListener.execute((Void[]) null);
+			clientEventListener.execute();
 		}
 		sendDiscoveryRequest(displayName);
 	}
@@ -198,7 +197,7 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 		// mlock.release();
 		if (clientEventListener != null) clientEventListener.cancelme();
 		clientEventListener = new ClientEventListener();
-		clientEventListener.execute((Void[]) null);
+		clientEventListener.execute();
 		clientInviteHandler.onStartConnection(data, offset, pack);
 	}
 
@@ -206,7 +205,7 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 	public void onClientAccepted(String[] data, int offset, DatagramPacket pack) {
 		if (clientEventListener != null) clientEventListener.cancelme();
 		clientEventListener = new ClientEventListener();
-		clientEventListener.execute((Void[]) null);
+		clientEventListener.execute();
 		clientInviteHandler.onClientAccepted(data, offset, pack);
 	}
 
@@ -390,7 +389,7 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 	 * 
 	 * @param pAdapter
 	 *            The (custom) adapter, that has to be created by your application prior to calling this method.<br>
-	 *            This can be a {@link SimpleAdapter} or any custom Adapter that you need for your application. If you are creating a SimpleAdapter, be sure to use {@link LanUDPComm#FROM_CLIENTS} as the String[] parameter in the Adapter's constructor, and use {@link #getClientsData()} to get the data needed for the {@code List<? extends Map<String, ?>>} parameter.
+	 *            This can be a SimpleAdapter or any custom Adapter that you need for your application. If you are creating a SimpleAdapter, be sure to use {@link LanUDPComm#FROM_CLIENTS} as the String[] parameter in the Adapter's constructor, and use {@link #getClientsData()} to get the data needed for the {@code List<? extends Map<String, ?>>} parameter.
 	 */
 	public void setClientsAdapter(BaseAdapter pAdapter) {
 		clientsAdapter = pAdapter;
@@ -412,7 +411,7 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 	}
 
 	/**
-	 * Invites a client for a connection. After the target client has accepted the invite, all subsequent calls to {@link #sendClientPacket()} and {@link #sendClientPacket(String)} will target this client.
+	 * Invites a client for a connection. After the target client has accepted the invite (if {@link #needAliveConnection} is {@code true}) or if {@link #needAliveConnection} is {@code false}, all subsequent calls to {@link #sendClientPacket()} and {@link #sendClientPacket(String)} will target this client.
 	 * 
 	 * @param index
 	 *            The index into the clientlist adapter, previously instantiated with {@link #setClientsAdapter(BaseAdapter)}.
@@ -583,9 +582,10 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 	}
 
 	/**
-	 * Call this if you don't have a {@link #needAliveConnection} and you want to let the target client know that you are ending the connection. This is usefull for example for chat-like applications, so that {@link ClientEventHandler#onClientEndConnection(DatagramPacket)} gets called and you can show client status on the receiving end.
+	 * Call this if you don't have a {@link #needAliveConnection} and you want to let the target client know that you are ending the connection. This is usefull for example for chat-like applications, so that {@link ClientEventHandler#onClientEndConnection(DatagramPacket)} gets called at the target client, and you can keep track of client status.<br>
+	 * If {@link #needAliveConnection} is {@code true} this will be called automatically at the appropriate time.
 	 */
-	public void sendClientBye() {
+	public void sendClientByeBye() {
 		if (isAlivePacket.getAddress() != null) {
 			sendPacket(new DatagramPacket(LanUDPComm.BYE.getBytes(), LanUDPComm.BYE.length(), isAlivePacket.getAddress(), comm_port));
 			isAlivePacket.setAddress(null);
@@ -603,8 +603,8 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 		// mlock.acquire();
 		if (connected) {
 			connected = false;
+			sendClientByeBye();
 			if (clientEventListener != null) clientEventListener.cancelme();
-			sendClientBye();
 			return true;
 		}
 		return false;
@@ -731,6 +731,7 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 		private Runnable keepConnectionAlive = new Runnable() {
 			@Override
 			public void run() {
+				mHandler.removeCallbacks(this);
 				if (running) {
 					if (clientTTL > System.currentTimeMillis()) {
 						sendAlivePacket();
@@ -738,8 +739,8 @@ public class LanUDPComm implements ClientsEventHandler, ClientInviteHandler, Cli
 					} else {
 						running = false;
 						clientEventHandler.onClientNotResponding(pack);
-						cancel(true);
 						stopConnection();
+						cancel(true);
 					}
 				}
 			}
